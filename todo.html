@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arjun's Stylish To-Do App</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #00ffc3;
+      --text: #ffffff;
+      --done: #64748b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+    .section {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    }
+    .section h2 {
+      margin-bottom: 10px;
+      color: var(--accent);
+    }
+    .input-group {
+      margin-bottom: 10px;
+    }
+    input[type="text"], input[type="datetime-local"] {
+      padding: 10px;
+      width: 60%;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background-color: var(--accent);
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #00ddb3;
+    }
+    ul {
+      list-style-type: none;
+      margin-top: 15px;
+    }
+    li {
+      background: #334155;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    li.done {
+      text-decoration: line-through;
+      color: var(--done);
+      background: #1e293b;
+    }
+    .timestamp {
+      font-size: 12px;
+      color: #ccc;
+      margin-top: 5px;
+      width: 100%;
+    }
+    .delete {
+      background: crimson;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>✨ Arjun's Time-based To-Do Tracker</h1>
+
+  <div class="section">
+    <h2>✅ Today – What I Did</h2>
+    <div class="input-group">
+      <input type="text" id="todayInput" placeholder="Add today’s task..." />
+      <input type="datetime-local" id="todayTime" />
+      <button onclick="addTask('today')">Add</button>
+    </div>
+    <ul id="todayList"></ul>
+  </div>
+
+  <div class="section">
+    <h2>📌 Tomorrow – What I Plan</h2>
+    <div class="input-group">
+      <input type="text" id="tomorrowInput" placeholder="Add tomorrow’s plan..." />
+      <input type="datetime-local" id="tomorrowTime" />
+      <button onclick="addTask('tomorrow')">Add</button>
+    </div>
+    <ul id="tomorrowList"></ul>
+  </div>
+
+  <div class="section">
+    <h2>📅 Weekly Goals</h2>
+    <div class="input-group">
+      <input type="text" id="weekInput" placeholder="Add weekly goal..." />
+      <input type="datetime-local" id="weekTime" />
+      <button onclick="addTask('week')">Add</button>
+    </div>
+    <ul id="weekList"></ul>
+  </div>
+
+  <script>
+    window.onload = () => {
+      ['today', 'tomorrow', 'week'].forEach(loadTasks);
+    };
+
+    function addTask(section) {
+      const input = document.getElementById(section + 'Input');
+      const timeInput = document.getElementById(section + 'Time');
+      const taskText = input.value.trim();
+      const taskTime = timeInput.value;
+
+      if (taskText === '') return;
+
+      const createdTime = new Date().toLocaleString();
+
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <span onclick="toggleDone(this)">${taskText}</span>
+        <div class="timestamp">
+          Target Time: ${taskTime ? new Date(taskTime).toLocaleString() : 'Not Set'}<br>
+          Added: ${createdTime}
+        </div>
+        <button class="delete" onclick="deleteTask(this, '${section}')">X</button>
+      `;
+      document.getElementById(section + 'List').appendChild(li);
+      input.value = '';
+      timeInput.value = '';
+      saveTasks(section);
+    }
+
+    function toggleDone(span) {
+      span.parentElement.classList.toggle('done');
+      saveTasksForAll();
+    }
+
+    function deleteTask(button, section) {
+      button.parentElement.remove();
+      saveTasks(section);
+    }
+
+    function saveTasks(section) {
+      const listItems = document.querySelectorAll(`#${section}List li`);
+      const tasks = [];
+      listItems.forEach(li => {
+        const text = li.querySelector('span').innerText;
+        const timestamp = li.querySelector('.timestamp').innerHTML;
+        const done = li.classList.contains('done');
+        tasks.push({ text, timestamp, done });
+      });
+      localStorage.setItem(section + 'Tasks', JSON.stringify(tasks));
+    }
+
+    function saveTasksForAll() {
+      ['today', 'tomorrow', 'week'].forEach(saveTasks);
+    }
+
+    function loadTasks(section) {
+      const saved = JSON.parse(localStorage.getItem(section + 'Tasks')) || [];
+      saved.forEach(task => {
+        const li = document.createElement('li');
+        if (task.done) li.classList.add('done');
+        li.innerHTML = `
+          <span onclick="toggleDone(this)">${task.text}</span>
+          <div class="timestamp">${task.timestamp}</div>
+          <button class="delete" onclick="deleteTask(this, '${section}')">X</button>
+        `;
+        document.getElementById(section + 'List').appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
